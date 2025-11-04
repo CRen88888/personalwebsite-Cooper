@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About Me | Cooper Ren</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #ff006e;
+        --secondary: #fb5607;
+        --dark: #000000;
+        --light: #ffffff;
+        --gray: #1a1a1a;
+        --text-dark: #ffffff;
+        --text-light: #e0e0e0;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background: linear-gradient(135deg, #000000 0%, #1a0000 25%, #2d0000 50%, #1a001a 75%, #000000 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 2px 20px rgba(255, 0, 110, 0.2);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.3);
+        z-index: 1000;
+        padding: 1rem 0;
+      }
+
+      .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607, #ff006e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 6rem 2rem 2rem;
+      }
+
+      .about-content {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 4rem;
+        align-items: center;
+        margin-top: 2rem;
+      }
+
+      .about-image {
+        width: 100%;
+        max-width: 400px;
+        aspect-ratio: 1;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #ff006e, #fb5607, #ff006e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 8rem;
+        box-shadow: 0 10px 40px rgba(255, 0, 110, 0.4);
+        margin: 0 auto;
+      }
+
+      .about-text h1 {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .about-text h2 {
+        font-size: 2rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: #ff006e;
+      }
+
+      .about-text p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+        line-height: 1.8;
+      }
+
+      .skills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .skill-tag {
+        padding: 0.5rem 1.5rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        color: white;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: transform 0.3s ease;
+      }
+
+      .skill-tag:hover {
+        transform: scale(1.05);
+      }
+
+      @media (max-width: 768px) {
+        .about-content {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .about-image {
+          max-width: 300px;
+          font-size: 6rem;
+        }
+
+        .about-text h1 {
+          font-size: 2rem;
+        }
+
+        .about-text h2 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-container">
+        <div class="logo">Cooper Ren</div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="index.html#projects">Projects</a></li>
+          <li><a href="educational.html">Pascal's Triangle</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="about-content">
+        <div class="about-image">
+          CR
+        </div>
+        <div class="about-text">
+          <h1>About Me</h1>
+          <p>
+            Hello! I'm Cooper Ren, a current senior at Harvard-Westlake. I'm a competitive swimmer 
+            who thrives both in the pool and in the classroom, always pushing myself to excel in 
+            everything I do.
+          </p>
+          <p>
+            Beyond athletics, I'm a passionate learner with an insatiable thirst for knowledge. 
+            Whether it's diving deep into academic subjects, exploring new technologies, or 
+            tackling complex problems, I'm constantly seeking opportunities to grow and expand 
+            my understanding of the world around me.
+          </p>
+          <p>
+            My dedication to swimming has taught me discipline, perseverance, and the importance 
+            of continuous improvement—values that I apply to all aspects of my life. As I prepare 
+            for the next chapter of my journey, I'm excited to continue pursuing my passions and 
+            making a meaningful impact.
+          </p>
+          
+          <h2>Skills & Interests</h2>
+          <div class="skills">
+            <span class="skill-tag">Competitive Swimming</span>
+            <span class="skill-tag">Academic Excellence</span>
+            <span class="skill-tag">Continuous Learning</span>
+            <span class="skill-tag">Perseverance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
