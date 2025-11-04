@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pascal's Triangle | Cooper Ren</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #ff006e;
+        --secondary: #fb5607;
+        --dark: #000000;
+        --light: #ffffff;
+        --gray: #1a1a1a;
+        --text-dark: #ffffff;
+        --text-light: #e0e0e0;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background: linear-gradient(135deg, #000000 0%, #1a0000 25%, #2d0000 50%, #1a001a 75%, #000000 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 2px 20px rgba(255, 0, 110, 0.2);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.3);
+        z-index: 1000;
+        padding: 1rem 0;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607, #ff006e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 6rem 2rem 2rem;
+      }
+
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+      }
+
+      .controls {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .control-group label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        font-weight: 500;
+      }
+
+      .slider {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 0, 110, 0.2);
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        cursor: pointer;
+        border: none;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 0, 110, 0.2);
+        transition: 0.3s;
+        border-radius: 24px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+
+      input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+      }
+
+      .triangle-container {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+        overflow-x: auto;
+      }
+
+      .triangle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .triangle-row {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .triangle-cell {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        color: var(--text-dark);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .triangle-cell:hover {
+        transform: scale(1.1);
+        border-color: #ff006e;
+        box-shadow: 0 0 15px rgba(255, 0, 110, 0.5);
+        z-index: 10;
+      }
+
+      .triangle-cell.row-highlighted {
+        border: 2px solid #ff006e;
+        box-shadow: 0 0 10px rgba(255, 0, 110, 0.6);
+      }
+
+      .triangle-cell.mod-0 {
+        background: rgba(255, 0, 110, 0.3);
+      }
+
+      .triangle-cell.mod-1 {
+        background: rgba(251, 86, 7, 0.3);
+      }
+
+      .triangle-cell.mod-2 {
+        background: rgba(255, 150, 200, 0.3);
+      }
+
+      .triangle-cell.mod-3 {
+        background: rgba(200, 100, 255, 0.3);
+      }
+
+      .triangle-cell.mod-4 {
+        background: rgba(100, 200, 255, 0.3);
+      }
+
+      .hover-info {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.95);
+        border: 1px solid #ff006e;
+        border-radius: 8px;
+        padding: 1rem;
+        min-width: 250px;
+        margin-bottom: 10px;
+        display: none;
+        z-index: 100;
+        font-size: 0.9rem;
+      }
+
+      .triangle-cell:hover .hover-info {
+        display: block;
+      }
+
+      .info-panel {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+      }
+
+      .info-panel h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #ff006e;
+      }
+
+      .formula {
+        background: rgba(0, 0, 0, 0.5);
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        font-family: 'Courier New', monospace;
+      }
+
+      .identity-selector {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+      }
+
+      .identity-btn {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 0, 110, 0.2);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        color: var(--text-dark);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .identity-btn:hover,
+      .identity-btn.active {
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        border-color: #ff006e;
+      }
+
+      .highlighted {
+        background: rgba(255, 0, 110, 0.5) !important;
+        border-color: #ff006e !important;
+      }
+
+      .input-group {
+        margin: 1rem 0;
+      }
+
+      .input-group input {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        color: var(--text-dark);
+        padding: 0.5rem;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 1rem;
+      }
+
+      .binomial-expansion {
+        font-size: 1.2rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        margin: 1rem 0;
+      }
+
+      @media (max-width: 768px) {
+        .triangle-cell {
+          width: 40px;
+          height: 40px;
+          font-size: 0.8rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-container">
+        <div class="logo">Cooper Ren</div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#about">About</a></li>
+          <li><a href="index.html#projects">Projects</a></li>
+          <li><a href="educational.html">Pascal's Triangle</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>Pascal's Triangle</h1>
+      
+      <div class="controls">
+        <div class="control-group">
+          <label for="rows">Number of Rows (n): <span id="rowsValue">10</span></label>
+          <input type="range" id="rows" min="0" max="20" value="10" class="slider">
+        </div>
+        
+        <div class="control-group">
+          <label>
+            <span>Mod Color</span>
+            <select id="modValue" style="margin-top: 0.5rem; width: 100%; padding: 0.5rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,0,110,0.3); border-radius: 8px; color: var(--text-dark);">
+              <option value="0">Off</option>
+              <option value="2">Mod 2</option>
+              <option value="3">Mod 3</option>
+              <option value="5">Mod 5</option>
+            </select>
+          </label>
+        </div>
+        
+        <div class="control-group">
+          <label>
+            <span>Show Formulas</span>
+            <label class="toggle-switch" style="margin-top: 0.5rem;">
+              <input type="checkbox" id="showFormulas">
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </div>
+
+      <div class="triangle-container">
+        <div class="triangle" id="triangle"></div>
+      </div>
+
+      <div class="info-panel">
+        <h2>Explore Identities</h2>
+        <div class="identity-selector">
+          <button class="identity-btn" data-type="natural">Natural Numbers</button>
+          <button class="identity-btn" data-type="triangular">Triangular Numbers</button>
+          <button class="identity-btn" data-type="tetrahedral">Tetrahedral Numbers</button>
+          <button class="identity-btn" data-type="hockey">Hockey-Stick Identity</button>
+          <button class="identity-btn" data-type="clear">Clear Highlights</button>
+        </div>
+        <div id="identityInfo"></div>
+      </div>
+
+      <div class="info-panel">
+        <h2>Binomial Expansion Playground</h2>
+        <div class="input-group">
+          <label>Enter expression: (ax + by)^n</label>
+          <input type="text" id="binomialInput" value="(x + y)^n" placeholder="(x + y)^n">
+        </div>
+        <div class="binomial-expansion" id="binomialExpansion"></div>
+      </div>
+
+      <div class="info-panel">
+        <h2>Combinations & Counting</h2>
+        <div class="input-group">
+          <label>How many committees of size k from n people?</label>
+          <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            <input type="number" id="nValue" placeholder="n" value="5" min="0" max="20" style="width: 100px;">
+            <input type="number" id="kValue" placeholder="k" value="2" min="0" max="20" style="width: 100px;">
+          </div>
+        </div>
+        <div class="formula" id="combinationResult"></div>
+      </div>
+
+      <div class="info-panel">
+        <h2>Patterns & Extensions</h2>
+        <div class="formula">
+          <div><strong>Sierpiński Triangle:</strong> Toggle "Mod 2" coloring to see the fractal pattern emerge. Odd numbers are colored differently than even numbers.</div>
+          <div style="margin-top: 1rem;"><strong>Fibonacci on Pascal:</strong> Sum the shallow diagonals (click Fibonacci Pattern button) to see the Fibonacci sequence: 1, 1, 2, 3, 5, 8, 13, ...</div>
+          <div style="margin-top: 1rem;"><strong>Probability Tie-in:</strong> Row n represents the distribution of heads for n coin flips. Each entry C(n,k) gives the number of ways to get exactly k heads, so the probability is C(n,k) / 2^n.</div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <h2>Generation Rule</h2>
+        <div class="formula">
+          <div><strong>Edges:</strong> All entries on the left and right edges are 1.</div>
+          <div style="margin-top: 0.5rem;"><strong>Interior:</strong> Each interior entry equals the sum of the two entries directly above it.</div>
+          <div style="margin-top: 0.5rem;">For example, the entry at row n, position k is: C(n,k) = C(n-1,k-1) + C(n-1,k)</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentRows = 10;
+      let modValue = 0;
+      let showFormulas = false;
+      let pascalTriangle = [];
+      let currentIdentity = null;
+
+      // Calculate binomial coefficient C(n, k)
+      function binomialCoefficient(n, k) {
+        if (k > n || k < 0) return 0;
+        if (k === 0 || k === n) return 1;
+        let result = 1;
+        for (let i = 0; i < k; i++) {
+          result = result * (n - i) / (i + 1);
+        }
+        return Math.round(result);
+      }
+
+      // Generate Pascal's Triangle
+      function generateTriangle(rows) {
+        pascalTriangle = [];
+        for (let n = 0; n <= rows; n++) {
+          pascalTriangle[n] = [];
+          for (let k = 0; k <= n; k++) {
+            pascalTriangle[n][k] = binomialCoefficient(n, k);
+          }
+        }
+        return pascalTriangle;
+      }
+
+      // Render triangle
+      function renderTriangle() {
+        const triangleDiv = document.getElementById('triangle');
+        triangleDiv.innerHTML = '';
+        
+        const triangle = generateTriangle(currentRows);
+        
+        triangle.forEach((row, n) => {
+          const rowDiv = document.createElement('div');
+          rowDiv.className = 'triangle-row';
+          
+          row.forEach((value, k) => {
+            const cell = document.createElement('div');
+            cell.className = 'triangle-cell';
+            cell.textContent = value;
+            cell.dataset.n = n;
+            cell.dataset.k = k;
+            cell.dataset.value = value;
+            
+            // Apply mod coloring
+            if (modValue > 0) {
+              const mod = value % modValue;
+              cell.classList.add(`mod-${mod}`);
+            }
+            
+            // Add hover info - always show, but more detailed when showFormulas is on
+            const hoverInfo = document.createElement('div');
+            hoverInfo.className = 'hover-info';
+            
+            if (showFormulas) {
+              hoverInfo.innerHTML = `
+                <div><strong>Value:</strong> ${value}</div>
+                <div><strong>C(${n}, ${k})</strong> = ${value}</div>
+                <div><strong>Paths in a grid:</strong> Number of ways to choose ${k} positions from ${n} positions, or ${k} right moves in a grid with ${n-k} down moves</div>
+                <div><strong>Term in (a+b)^${n}:</strong> C(${n}, ${k}) · a^${n-k} · b^${k}</div>
+                <div><strong>Probability:</strong> For ${n} coin flips, probability of exactly ${k} heads = C(${n}, ${k}) / 2^${n}</div>
+              `;
+            } else {
+              hoverInfo.innerHTML = `
+                <div><strong>Value:</strong> ${value}</div>
+                <div><strong>C(${n}, ${k})</strong> = ${value}</div>
+                <div><strong>Row ${n}, Position ${k}</strong></div>
+              `;
+            }
+            cell.appendChild(hoverInfo);
+            
+            cell.addEventListener('click', () => highlightCell(n, k));
+            rowDiv.appendChild(cell);
+          });
+          
+          triangleDiv.appendChild(rowDiv);
+        });
+      }
+
+      // Highlight cell and show info
+      function highlightCell(n, k) {
+        const cells = document.querySelectorAll('.triangle-cell');
+        cells.forEach(c => c.classList.remove('highlighted'));
+        
+        const cell = document.querySelector(`[data-n="${n}"][data-k="${k}"]`);
+        if (cell) {
+          cell.classList.add('highlighted');
+        }
+      }
+
+      // Handle identity selection
+      document.querySelectorAll('.identity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type = btn.dataset.type;
+          
+          if (type === 'clear') {
+            clearHighlights();
+            currentIdentity = null;
+            document.getElementById('identityInfo').innerHTML = '';
+            // Remove active class from all buttons
+            document.querySelectorAll('.identity-btn').forEach(b => b.classList.remove('active'));
+            return;
+          }
+          
+          document.querySelectorAll('.identity-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentIdentity = type;
+          applyIdentity(type);
+        });
+      });
+
+      function clearHighlights() {
+        document.querySelectorAll('.triangle-cell').forEach(cell => {
+          cell.classList.remove('highlighted');
+        });
+      }
+
+      function applyIdentity(type) {
+        clearHighlights();
+        const infoDiv = document.getElementById('identityInfo');
+        const cells = document.querySelectorAll('.triangle-cell');
+        
+        switch(type) {
+          case 'natural':
+            // Highlight diagonal: C(n, 1) = n
+            for (let n = 1; n <= currentRows; n++) {
+              const cell = document.querySelector(`[data-n="${n}"][data-k="1"]`);
+              if (cell) cell.classList.add('highlighted');
+            }
+            infoDiv.innerHTML = '<div class="formula">Natural Numbers: C(n, 1) = n<br>1, 2, 3, 4, 5, ...</div>';
+            break;
+            
+          case 'triangular':
+            // Highlight diagonal: C(n, 2)
+            for (let n = 2; n <= currentRows; n++) {
+              const cell = document.querySelector(`[data-n="${n}"][data-k="2"]`);
+              if (cell) cell.classList.add('highlighted');
+            }
+            infoDiv.innerHTML = '<div class="formula">Triangular Numbers: C(n, 2) = n(n-1)/2<br>1, 3, 6, 10, 15, ...</div>';
+            break;
+            
+          case 'tetrahedral':
+            // Highlight diagonal: C(n, 3)
+            for (let n = 3; n <= currentRows; n++) {
+              const cell = document.querySelector(`[data-n="${n}"][data-k="3"]`);
+              if (cell) cell.classList.add('highlighted');
+            }
+            infoDiv.innerHTML = '<div class="formula">Tetrahedral Numbers: C(n, 3) = n(n-1)(n-2)/6<br>1, 4, 10, 20, 35, ...</div>';
+            break;
+            
+          case 'hockey':
+            // Highlight hockey-stick example for current n (rows)
+            // Hockey-stick identity: Σ(i=r to m) C(i, r) = C(m+1, r+1)
+            // For n rows, we show: C(2,2) + C(3,2) + ... + C(n-1,2) = C(n,3)
+            // This includes the edge "1" (C(2,2) = 1) and works for all n >= 3, except n=2
+            
+            if (currentRows >= 3 && currentRows !== 2) {
+              const r = 2; // Column index
+              const m = currentRows - 1; // Last row in the stick
+              
+              // Highlight the diagonal entries (the stick), starting from C(2,2) = 1
+              for (let i = 2; i <= m; i++) {
+                const cell = document.querySelector(`[data-n="${i}"][data-k="${r}"]`);
+                if (cell) cell.classList.add('highlighted');
+              }
+              
+              // Highlight the result entry (the blade) at C(n, 3)
+              const resultCell = document.querySelector(`[data-n="${currentRows}"][data-k="3"]`);
+              if (resultCell) resultCell.classList.add('highlighted');
+              
+              // Build the formula string
+              const terms = [];
+              for (let i = 2; i <= m; i++) {
+                terms.push(`C(${i},2)`);
+              }
+              const formula = terms.join(' + ') + ` = C(${currentRows},3)`;
+              
+              infoDiv.innerHTML = `<div class="formula">Hockey-Stick Identity: Σ(i=r to m) C(i, r) = C(m+1, r+1)<br>${formula}<br>The diagonal entries (stick) sum to the entry below (blade). Includes the edge "1" (C(2,2)=1).</div>`;
+            } else if (currentRows === 2) {
+              infoDiv.innerHTML = '<div class="formula">Hockey-Stick Identity: Requires at least 3 rows to display.<br>Try increasing the number of rows.</div>';
+            } else {
+              infoDiv.innerHTML = '<div class="formula">Hockey-Stick Identity: Requires at least 3 rows to display.</div>';
+            }
+            break;
+        }
+      }
+
+      // Parse binomial expression (ax + by)^n
+      function parseBinomial(input) {
+        // Match patterns like (ax + by)^n, (2x + 3y)^2, (x + y)^n, etc.
+        const match = input.match(/\(([^)]+)\)\^(\d+)/);
+        if (!match) return null;
+        
+        const inner = match[1].trim();
+        const n = parseInt(match[2]);
+        
+        // Split by + and trim
+        const parts = inner.split('+').map(p => p.trim());
+        if (parts.length !== 2) return null;
+        
+        // Parse first term: extract coefficient and variable
+        // Examples: "2x" -> coeff=2, var="x"; "x" -> coeff=1, var="x"; "3a" -> coeff=3, var="a"
+        const term1Match = parts[0].match(/^(-?\d*\.?\d*)([a-zA-Z]+)$/);
+        const term2Match = parts[1].match(/^(-?\d*\.?\d*)([a-zA-Z]+)$/);
+        
+        if (!term1Match || !term2Match) return null;
+        
+        const coeff1 = term1Match[1] === '' || term1Match[1] === '-' ? (term1Match[1] === '-' ? -1 : 1) : parseFloat(term1Match[1]);
+        const var1 = term1Match[2];
+        const coeff2 = term2Match[1] === '' || term2Match[1] === '-' ? (term2Match[1] === '-' ? -1 : 1) : parseFloat(term2Match[1]);
+        const var2 = term2Match[2];
+        
+        return { coeff1, var1, coeff2, var2, n };
+      }
+
+      // Format a term coefficient
+      function formatCoeff(coeff) {
+        if (coeff === 1) return '';
+        if (coeff === -1) return '-';
+        return coeff.toString();
+      }
+
+      // Format a variable with exponent
+      function formatVar(varName, exp) {
+        if (exp === 0) return '';
+        if (exp === 1) return varName;
+        return `${varName}^${exp}`;
+      }
+
+      // Binomial expansion
+      function updateBinomialExpansion() {
+        const input = document.getElementById('binomialInput').value;
+        const expansionDiv = document.getElementById('binomialExpansion');
+        
+        // Clear previous row highlighting
+        document.querySelectorAll('.triangle-cell').forEach(cell => {
+          cell.classList.remove('row-highlighted');
+        });
+        
+        if (currentRows >= 0) {
+          const row = pascalTriangle[currentRows] || [];
+          let expansion = '';
+          
+          // Try to parse binomial expression
+          const parsed = parseBinomial(input);
+          
+          if (parsed) {
+            const { coeff1, var1, coeff2, var2, n } = parsed;
+            
+            // Highlight row n
+            if (n >= 0 && n <= 20) {
+              for (let k = 0; k <= n; k++) {
+                const cell = document.querySelector(`[data-n="${n}"][data-k="${k}"]`);
+                if (cell) {
+                  cell.classList.add('row-highlighted');
+                }
+              }
+            }
+            
+            // Build expansion using binomial theorem: (a + b)^n = Σ C(n,k) * a^(n-k) * b^k
+            const coeff1Str = formatCoeff(coeff1) !== '' ? formatCoeff(coeff1) : '';
+            const coeff2Str = formatCoeff(coeff2) !== '' ? formatCoeff(coeff2) : '';
+            expansion = `(${coeff1Str}${var1} + ${coeff2Str}${var2})^${n} = `;
+            const terms = [];
+            
+            for (let k = 0; k <= n; k++) {
+              const binomCoeff = binomialCoefficient(n, k);
+              const aPower = n - k;
+              const bPower = k;
+              
+              // Calculate: C(n,k) * coeff1^(n-k) * coeff2^k
+              const coeff = binomCoeff * Math.pow(coeff1, aPower) * Math.pow(coeff2, bPower);
+              
+              if (coeff !== 0) {
+                const var1Part = formatVar(var1, aPower);
+                const var2Part = formatVar(var2, bPower);
+                
+                // Build term - combine variable parts
+                const varPart = var1Part + var2Part;
+                
+                // Build term with coefficient
+                let term = '';
+                if (coeff === 1) {
+                  term = varPart || '1';
+                } else if (coeff === -1) {
+                  term = varPart ? `-${varPart}` : '-1';
+                } else {
+                  term = `${coeff}${varPart}`;
+                }
+                
+                terms.push(term);
+              }
+            }
+            
+            expansion += terms.join(' + ').replace(/\+\s+-/g, ' - '); // Replace "+ -" with " - "
+          } else {
+            // Default: show row n where n is currentRows
+            for (let k = 0; k <= currentRows; k++) {
+              const cell = document.querySelector(`[data-n="${currentRows}"][data-k="${k}"]`);
+              if (cell) {
+                cell.classList.add('row-highlighted');
+              }
+            }
+            expansion = `Row ${currentRows}: ${row.join(', ')}`;
+            expansion += `<br><small>Enter (ax + by)^n to see expansion (e.g., (x + y)^2, (2x + 3y)^3)</small>`;
+          }
+          
+          expansionDiv.innerHTML = expansion;
+        }
+      }
+
+      // Combinations calculator
+      function updateCombinations() {
+        const n = parseInt(document.getElementById('nValue').value) || 0;
+        const k = parseInt(document.getElementById('kValue').value) || 0;
+        const resultDiv = document.getElementById('combinationResult');
+        
+        if (k > n || k < 0 || n < 0) {
+          resultDiv.innerHTML = 'Invalid input: k must be ≤ n and both ≥ 0';
+          return;
+        }
+        
+        const result = binomialCoefficient(n, k);
+        resultDiv.innerHTML = `
+          <div><strong>C(${n}, ${k}) = ${result}</strong></div>
+          <div style="margin-top: 0.5rem;">Choose ${k} positions from ${n} people</div>
+          <div>Paths in a ${k}×${n-k} grid (right/down moves)</div>
+          <div>n!/(k!(n-k)!) = ${factorial(n)}/(${factorial(k)} × ${factorial(n-k)}) = ${result}</div>
+        `;
+      }
+
+      function factorial(n) {
+        if (n <= 1) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+          result *= i;
+        }
+        return result;
+      }
+
+      // Event listeners
+      document.getElementById('rows').addEventListener('input', (e) => {
+        currentRows = parseInt(e.target.value);
+        document.getElementById('rowsValue').textContent = currentRows;
+        renderTriangle();
+        // Update binomial expansion which will re-highlight the row
+        setTimeout(() => {
+          updateBinomialExpansion();
+        }, 10);
+        if (currentIdentity) applyIdentity(currentIdentity);
+      });
+
+      document.getElementById('modValue').addEventListener('change', (e) => {
+        modValue = parseInt(e.target.value);
+        renderTriangle();
+        // Re-highlight row after rendering
+        setTimeout(() => {
+          updateBinomialExpansion();
+        }, 10);
+        if (currentIdentity) applyIdentity(currentIdentity);
+      });
+
+      document.getElementById('showFormulas').addEventListener('change', (e) => {
+        showFormulas = e.target.checked;
+        renderTriangle();
+        updateBinomialExpansion(); // Re-highlight row
+        if (currentIdentity) applyIdentity(currentIdentity);
+      });
+
+      document.getElementById('binomialInput').addEventListener('input', updateBinomialExpansion);
+      document.getElementById('nValue').addEventListener('input', updateCombinations);
+      document.getElementById('kValue').addEventListener('input', updateCombinations);
+
+      // Initialize
+      renderTriangle();
+      updateBinomialExpansion();
+      updateCombinations();
+    </script>
+  </body>
+</html>
+
