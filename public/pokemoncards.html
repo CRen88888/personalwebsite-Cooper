@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pokémon Cards | Cooper Ren</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+      // Import Firebase functions
+      import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+      // Your Firebase configuration
+      // Replace these values with your actual Firebase config from:
+      // Firebase Console > Project Settings > General > Your apps > Web app config
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "personalwebsite-cooper.firebaseapp.com",
+        projectId: "personalwebsite-cooper",
+        storageBucket: "personalwebsite-cooper.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      // Initialize Firebase (only if not already initialized)
+      let app;
+      const existingApps = getApps();
+      if (existingApps.length === 0) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = existingApps[0];
+      }
+
+      const db = getFirestore(app);
+
+      // Make db and functions available globally
+      window.db = db;
+      window.getDocs = getDocs;
+      window.collection = collection;
+      window.addDoc = addDoc;
+      window.setDoc = setDoc;
+      window.deleteDoc = deleteDoc;
+      window.updateDoc = updateDoc;
+      window.doc = doc;
+      window.firebaseInitialized = true;
+    </script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #ff006e;
+        --secondary: #fb5607;
+        --dark: #000000;
+        --light: #ffffff;
+        --gray: #1a1a1a;
+        --text-dark: #ffffff;
+        --text-light: #e0e0e0;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background: linear-gradient(135deg, #000000 0%, #1a0000 25%, #2d0000 50%, #1a001a 75%, #000000 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 2px 20px rgba(255, 0, 110, 0.2);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.3);
+        z-index: 1000;
+        padding: 1rem 0;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607, #ff006e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: color 0.3s ease;
+        position: relative;
+      }
+
+      .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      .nav-links a.active {
+        color: #ff006e;
+      }
+
+      .nav-links a.active::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 6rem 2rem 2rem;
+      }
+
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: var(--text-light);
+        font-size: 1.2rem;
+        margin-bottom: 3rem;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+        font-size: 1.1rem;
+      }
+
+      .loading::after {
+        content: '...';
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+
+      @keyframes dots {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60%, 100% { content: '...'; }
+      }
+
+      .error {
+        background: rgba(251, 86, 7, 0.2);
+        border: 1px solid rgba(251, 86, 7, 0.5);
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem 0;
+        text-align: center;
+        color: var(--text-dark);
+      }
+
+      .error h2 {
+        color: #fb5607;
+        margin-bottom: 1rem;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .card {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+      }
+
+      .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 40px rgba(255, 0, 110, 0.4);
+        border-color: rgba(255, 0, 110, 0.5);
+      }
+
+      .card-content {
+        flex-grow: 1;
+      }
+
+      .card-clickable {
+        cursor: pointer;
+      }
+
+      .card-image {
+        width: 100%;
+        height: 300px;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .card-image::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20z'/%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.3;
+        z-index: 1;
+      }
+
+      .card-content {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+      }
+
+      .card p {
+        color: var(--text-light);
+        margin-bottom: 1rem;
+        flex-grow: 1;
+      }
+
+      .card-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .card-field {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+
+      .card-field-label {
+        font-weight: 600;
+        color: #ff006e;
+      }
+
+      .card-field-value {
+        color: var(--text-light);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-light);
+      }
+
+      .empty-state h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: var(--text-dark);
+      }
+
+      .empty-state p {
+        font-size: 1.1rem;
+        margin-top: 1rem;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .stat-card {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        padding: 1.5rem 2rem;
+        text-align: center;
+        min-width: 150px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        font-family: 'Inter', sans-serif;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        color: white;
+        box-shadow: 0 4px 20px rgba(255, 0, 110, 0.4);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 30px rgba(255, 0, 110, 0.6);
+      }
+
+      .btn-danger {
+        background: rgba(251, 86, 7, 0.2);
+        color: #fb5607;
+        border: 2px solid #fb5607;
+      }
+
+      .btn-danger:hover {
+        background: #fb5607;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .btn-small {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+      }
+
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+      }
+
+      .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: rgba(26, 26, 26, 0.95);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(255, 0, 110, 0.4);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .modal-header h2 {
+        font-size: 1.8rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-dark);
+        font-size: 2rem;
+        cursor: pointer;
+        transition: color 0.3s ease;
+        line-height: 1;
+      }
+
+      .close-btn:hover {
+        color: #ff006e;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+        font-weight: 500;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        border-radius: 8px;
+        color: var(--text-dark);
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #ff006e;
+        box-shadow: 0 0 10px rgba(255, 0, 110, 0.3);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+      }
+
+      .card-actions {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .card-actions button {
+        pointer-events: auto;
+      }
+
+      .card-clickable-area {
+        flex-grow: 1;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2rem;
+        }
+
+        .cards-grid {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        .nav-links {
+          gap: 1rem;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-container">
+        <div class="logo">Cooper Ren</div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="index.html#projects">Projects</a></li>
+          <li><a href="educational.html">Pascal's Triangle</a></li>
+          <li><a href="pokemoncards.html" class="active">Pokémon Cards</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>My Pokémon Cards Collection</h1>
+      <p class="subtitle">Browse through my collection of Pokémon cards</p>
+
+      <div id="stats" class="stats" style="display: none;">
+        <div class="stat-card">
+          <div class="stat-value" id="totalCards">0</div>
+          <div class="stat-label">Total Cards</div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="addCardBtn">+ Add Card</button>
+      </div>
+
+      <div id="loading" class="loading">Loading cards</div>
+      <div id="error" class="error" style="display: none;">
+        <h2>Error Loading Cards</h2>
+        <p id="errorMessage"></p>
+        <p style="margin-top: 1rem; font-size: 0.9rem;">
+          Make sure you've configured your Firebase credentials in the script section of this page.
+        </p>
+      </div>
+      <div id="cardsContainer" class="cards-grid"></div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div id="addCardModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add New Pokémon Card</h2>
+          <button class="close-btn" id="closeModal">&times;</button>
+        </div>
+        <form id="addCardForm">
+          <div class="form-group">
+            <label for="cardName">Name *</label>
+            <input type="text" id="cardName" required>
+          </div>
+          <div class="form-group">
+            <label for="cardSet">Set</label>
+            <input type="text" id="cardSet">
+          </div>
+          <div class="form-group">
+            <label for="cardPrice">Price</label>
+            <input type="text" id="cardPrice" placeholder="e.g., $50.00">
+          </div>
+          <div class="form-group">
+            <label for="cardCondition">Condition</label>
+            <input type="text" id="cardCondition" placeholder="e.g., Mint, Near Mint">
+          </div>
+          <div class="form-group">
+            <label for="cardArt">Art</label>
+            <input type="text" id="cardArt">
+          </div>
+          <div class="form-group">
+            <label for="cardImageUrl">Image URL</label>
+            <input type="url" id="cardImageUrl" placeholder="https://...">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-danger" id="cancelBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Card</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Card Modal -->
+    <div id="editCardModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Edit Pokémon Card</h2>
+          <button class="close-btn" id="closeEditModal">&times;</button>
+        </div>
+        <form id="editCardForm">
+          <input type="hidden" id="editCardId">
+          <div class="form-group">
+            <label for="editCardName">Name *</label>
+            <input type="text" id="editCardName" required>
+          </div>
+          <div class="form-group">
+            <label for="editCardSet">Set</label>
+            <input type="text" id="editCardSet">
+          </div>
+          <div class="form-group">
+            <label for="editCardPrice">Price</label>
+            <input type="text" id="editCardPrice" placeholder="e.g., $50.00">
+          </div>
+          <div class="form-group">
+            <label for="editCardCondition">Condition</label>
+            <input type="text" id="editCardCondition" placeholder="e.g., Mint, Near Mint">
+          </div>
+          <div class="form-group">
+            <label for="editCardArt">Art</label>
+            <input type="text" id="editCardArt">
+          </div>
+          <div class="form-group">
+            <label for="editCardImageUrl">Image URL</label>
+            <input type="url" id="editCardImageUrl" placeholder="https://...">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-danger" id="cancelEditBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Card</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module">
+      // Wait for Firebase to initialize
+      async function loadCards() {
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const errorMessageEl = document.getElementById('errorMessage');
+        const cardsContainer = document.getElementById('cardsContainer');
+        const statsEl = document.getElementById('stats');
+        const totalCardsEl = document.getElementById('totalCards');
+
+        try {
+          // Wait for Firebase to initialize (with timeout)
+          let attempts = 0;
+          while (!window.firebaseInitialized && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+
+          if (!window.db || !window.firebaseInitialized) {
+            throw new Error('Firebase not initialized. Please check your Firebase configuration in the script section of this page. Make sure to replace YOUR_API_KEY, YOUR_MESSAGING_SENDER_ID, and YOUR_APP_ID with your actual Firebase config values.');
+          }
+
+          // Get all documents from the pokemoncards collection
+          const cardsCollection = collection(window.db, 'pokemoncards');
+          const cardsSnapshot = await getDocs(cardsCollection);
+          
+          const cards = [];
+          cardsSnapshot.forEach((doc) => {
+            cards.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+
+          // Hide loading, show stats
+          loadingEl.style.display = 'none';
+          
+          if (cards.length > 0) {
+            statsEl.style.display = 'flex';
+            totalCardsEl.textContent = cards.length;
+          }
+
+          if (cards.length === 0) {
+            cardsContainer.innerHTML = `
+              <div class="empty-state" style="grid-column: 1 / -1;">
+                <h2>No Cards Found</h2>
+                <p>Your pokemoncards collection is empty. Add some cards to Firestore to see them here!</p>
+              </div>
+            `;
+            return;
+          }
+
+          // Display cards
+          cardsContainer.innerHTML = cards.map(card => {
+            // Build card HTML
+            let imageHtml = '🃏'; // Default emoji
+            if (card.imageUrl) {
+              imageHtml = `<img src="${card.imageUrl}" alt="${card.name || 'Pokémon Card'}" onerror="this.parentElement.innerHTML='🃏'">`;
+            } else if (card.image) {
+              imageHtml = `<img src="${card.image}" alt="${card.name || 'Pokémon Card'}" onerror="this.parentElement.innerHTML='🃏'">`;
+            }
+
+            // Build fields display in specific order: Set, Price, Condition, Art, then others
+            const excludedFields = ['id', 'imageUrl', 'image', 'name'];
+            const orderedFields = ['Set', 'Price', 'Condition', 'Art'];
+            
+            // Get all fields except excluded ones
+            const allFields = Object.keys(card).filter(key => !excludedFields.includes(key));
+            
+            // Separate ordered fields and other fields
+            const orderedFieldsPresent = [];
+            const otherFields = [];
+            
+            orderedFields.forEach(fieldName => {
+              // Check for case-insensitive match
+              const matchingKey = allFields.find(key => key.toLowerCase() === fieldName.toLowerCase());
+              if (matchingKey) {
+                orderedFieldsPresent.push(matchingKey);
+              }
+            });
+            
+            // Add remaining fields that weren't in the ordered list
+            allFields.forEach(key => {
+              if (!orderedFieldsPresent.includes(key)) {
+                otherFields.push(key);
+              }
+            });
+            
+            // Combine ordered fields first, then other fields
+            const sortedFields = [...orderedFieldsPresent, ...otherFields];
+            
+            const fields = sortedFields.map(key => {
+              const value = card[key];
+              // Format the value nicely
+              let displayValue = value;
+              if (value === null || value === undefined) {
+                displayValue = 'N/A';
+              } else if (typeof value === 'object') {
+                displayValue = JSON.stringify(value);
+              } else {
+                displayValue = String(value);
+              }
+              return `
+                <div class="card-field">
+                  <span class="card-field-label">${key}:</span>
+                  <span class="card-field-value">${displayValue}</span>
+                </div>
+              `;
+            }).join('');
+
+            // Store card data as JSON for easy access
+            const cardDataJson = JSON.stringify(card).replace(/"/g, '&quot;');
+            
+            return `
+              <div class="card" data-card-id="${card.id}" data-card-data="${cardDataJson}">
+                <div class="card-image">
+                  ${imageHtml}
+                </div>
+                <div class="card-content">
+                  <div class="card-clickable-area">
+                    <h3>${card.name || card.id || 'Unnamed Card'}</h3>
+                    ${fields ? `<div class="card-fields">${fields}</div>` : ''}
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-danger btn-small delete-card-btn" data-card-id="${card.id}">Delete</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+        } catch (error) {
+          console.error('Error loading cards:', error);
+          loadingEl.style.display = 'none';
+          errorEl.style.display = 'block';
+          errorMessageEl.textContent = error.message || 'Failed to load cards from Firestore.';
+        }
+      }
+
+      // Make loadCards available globally
+      window.loadCards = loadCards;
+
+      // Convert card name to a valid Firestore document ID
+      // Firestore IDs can contain most characters except forward slashes (/)
+      function nameToId(name) {
+        // Use the name exactly as-is, only remove forward slashes (not allowed in Firestore IDs)
+        // and trim whitespace
+        return name
+          .trim()
+          .replace(/\//g, '-'); // Replace forward slashes with hyphens (only character not allowed in Firestore IDs)
+      }
+
+      // Add card function
+      async function addCard(cardData) {
+        try {
+          if (!window.db || !window.firebaseInitialized) {
+            throw new Error('Firebase not initialized');
+          }
+
+          if (!cardData.name || cardData.name.trim().length === 0) {
+            throw new Error('Card name is required');
+          }
+
+          // Use the card name exactly as the document ID (with minimal sanitization)
+          let cardId = nameToId(cardData.name);
+          
+          // Check if a card with this ID already exists
+          // If it does, append a number to make it unique
+          let finalCardId = cardId;
+          let counter = 1;
+          
+          // Get all existing cards to check for duplicates
+          const cardsCollection = collection(window.db, 'pokemoncards');
+          const cardsSnapshot = await getDocs(cardsCollection);
+          const existingIds = new Set();
+          cardsSnapshot.forEach((doc) => {
+            existingIds.add(doc.id);
+          });
+          
+          while (existingIds.has(finalCardId)) {
+            finalCardId = `${cardId} (${counter})`;
+            counter++;
+          }
+
+          // Create document with the name-based ID
+          const cardRef = doc(window.db, 'pokemoncards', finalCardId);
+          await setDoc(cardRef, cardData);
+          
+          // Reload cards to show the new one
+          await loadCards();
+          
+          return true;
+        } catch (error) {
+          console.error('Error adding card:', error);
+          throw error;
+        }
+      }
+
+      // Delete card function
+      async function deleteCard(cardId) {
+        try {
+          if (!window.db || !window.firebaseInitialized) {
+            throw new Error('Firebase not initialized');
+          }
+
+          const cardRef = doc(window.db, 'pokemoncards', cardId);
+          await deleteDoc(cardRef);
+          
+          // Reload cards to remove the deleted one
+          await loadCards();
+          
+          return true;
+        } catch (error) {
+          console.error('Error deleting card:', error);
+          throw error;
+        }
+      }
+
+      // Update card function
+      async function updateCard(cardId, cardData) {
+        try {
+          if (!window.db || !window.firebaseInitialized) {
+            throw new Error('Firebase not initialized');
+          }
+
+          const cardRef = doc(window.db, 'pokemoncards', cardId);
+          await updateDoc(cardRef, cardData);
+          
+          // Reload cards to show the updated one
+          await loadCards();
+          
+          return true;
+        } catch (error) {
+          console.error('Error updating card:', error);
+          throw error;
+        }
+      }
+
+      // Modal handling
+      function openModal() {
+        document.getElementById('addCardModal').classList.add('active');
+      }
+
+      function closeModal() {
+        document.getElementById('addCardModal').classList.remove('active');
+        document.getElementById('addCardForm').reset();
+      }
+
+      function openEditModal(cardData) {
+        // Populate form with card data
+        document.getElementById('editCardId').value = cardData.id;
+        document.getElementById('editCardName').value = cardData.name || '';
+        document.getElementById('editCardSet').value = cardData.Set || '';
+        document.getElementById('editCardPrice').value = cardData.Price || '';
+        document.getElementById('editCardCondition').value = cardData.Condition || '';
+        document.getElementById('editCardArt').value = cardData.Art || '';
+        document.getElementById('editCardImageUrl').value = cardData.imageUrl || cardData.image || '';
+        
+        document.getElementById('editCardModal').classList.add('active');
+      }
+
+      function closeEditModal() {
+        document.getElementById('editCardModal').classList.remove('active');
+        document.getElementById('editCardForm').reset();
+      }
+
+      // Load cards when page loads
+      window.addEventListener('DOMContentLoaded', () => {
+        // Wait a bit longer for Firebase module to load
+        setTimeout(() => {
+          loadCards();
+
+          // Set up add card button
+          document.getElementById('addCardBtn').addEventListener('click', openModal);
+          
+          // Set up modal close buttons
+          document.getElementById('closeModal').addEventListener('click', closeModal);
+          document.getElementById('cancelBtn').addEventListener('click', closeModal);
+          
+          // Close modal when clicking outside
+          document.getElementById('addCardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addCardModal') {
+              closeModal();
+            }
+          });
+
+          // Handle form submission
+          document.getElementById('addCardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cardData = {
+              name: document.getElementById('cardName').value.trim(),
+            };
+
+            // Add optional fields if they have values (only include non-empty fields)
+            const set = document.getElementById('cardSet').value.trim();
+            const price = document.getElementById('cardPrice').value.trim();
+            const condition = document.getElementById('cardCondition').value.trim();
+            const art = document.getElementById('cardArt').value.trim();
+            const imageUrl = document.getElementById('cardImageUrl').value.trim();
+
+            // Use consistent capitalized field names to match display order
+            if (set && set.length > 0) cardData.Set = set;
+            if (price && price.length > 0) cardData.Price = price;
+            if (condition && condition.length > 0) cardData.Condition = condition;
+            if (art && art.length > 0) cardData.Art = art;
+            if (imageUrl && imageUrl.length > 0) cardData.imageUrl = imageUrl;
+
+            try {
+              const submitBtn = e.target.querySelector('button[type="submit"]');
+              submitBtn.disabled = true;
+              submitBtn.textContent = 'Adding...';
+
+              await addCard(cardData);
+              closeModal();
+              
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Add Card';
+            } catch (error) {
+              alert('Error adding card: ' + error.message);
+              const submitBtn = e.target.querySelector('button[type="submit"]');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Add Card';
+            }
+          });
+
+          // Set up edit modal close buttons
+          document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+          document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+          
+          // Close edit modal when clicking outside
+          document.getElementById('editCardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editCardModal') {
+              closeEditModal();
+            }
+          });
+
+          // Handle edit form submission
+          document.getElementById('editCardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cardId = document.getElementById('editCardId').value;
+            const cardData = {};
+
+            // Always include name (required)
+            const name = document.getElementById('editCardName').value.trim();
+            if (name && name.length > 0) cardData.name = name;
+
+            // Add optional fields if they have values (use consistent capitalized field names)
+            const set = document.getElementById('editCardSet').value.trim();
+            const price = document.getElementById('editCardPrice').value.trim();
+            const condition = document.getElementById('editCardCondition').value.trim();
+            const art = document.getElementById('editCardArt').value.trim();
+            const imageUrl = document.getElementById('editCardImageUrl').value.trim();
+
+            // Use consistent capitalized field names to match display order
+            if (set && set.length > 0) cardData.Set = set;
+            if (price && price.length > 0) cardData.Price = price;
+            if (condition && condition.length > 0) cardData.Condition = condition;
+            if (art && art.length > 0) cardData.Art = art;
+            if (imageUrl && imageUrl.length > 0) cardData.imageUrl = imageUrl;
+
+            try {
+              const submitBtn = e.target.querySelector('button[type="submit"]');
+              submitBtn.disabled = true;
+              submitBtn.textContent = 'Updating...';
+
+              await updateCard(cardId, cardData);
+              closeEditModal();
+              
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Update Card';
+            } catch (error) {
+              alert('Error updating card: ' + error.message);
+              const submitBtn = e.target.querySelector('button[type="submit"]');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Update Card';
+            }
+          });
+
+          // Handle card clicks and delete buttons (using event delegation since cards are dynamically added)
+          document.getElementById('cardsContainer').addEventListener('click', async (e) => {
+            // Handle delete button clicks
+            if (e.target.classList.contains('delete-card-btn')) {
+              e.stopPropagation(); // Prevent card click
+              const cardId = e.target.getAttribute('data-card-id');
+              
+              if (confirm('Are you sure you want to delete this card?')) {
+                try {
+                  e.target.disabled = true;
+                  e.target.textContent = 'Deleting...';
+                  
+                  await deleteCard(cardId);
+                } catch (error) {
+                  alert('Error deleting card: ' + error.message);
+                  e.target.disabled = false;
+                  e.target.textContent = 'Delete';
+                }
+              }
+              return;
+            }
+
+            // Handle card clicks (but not on buttons or card-actions)
+            const card = e.target.closest('.card');
+            if (card && !e.target.closest('.card-actions')) {
+              const cardDataJson = card.getAttribute('data-card-data');
+              if (cardDataJson) {
+                try {
+                  const cardData = JSON.parse(cardDataJson.replace(/&quot;/g, '"'));
+                  openEditModal(cardData);
+                } catch (error) {
+                  console.error('Error parsing card data:', error);
+                }
+              }
+            }
+          });
+        }, 500);
+      });
+    </script>
+  </body>
+</html>
+
