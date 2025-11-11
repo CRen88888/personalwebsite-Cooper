@@ -354,9 +354,50 @@
       .action-buttons {
         display: flex;
         justify-content: center;
+        align-items: center;
         gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
+      }
+
+      .sort-control {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .sort-control label {
+        color: var(--text-dark);
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+
+      .sort-select {
+        padding: 0.75rem 1.5rem;
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        border-radius: 25px;
+        color: var(--text-dark);
+        font-size: 1rem;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        outline: none;
+      }
+
+      .sort-select:hover {
+        border-color: rgba(255, 0, 110, 0.5);
+      }
+
+      .sort-select:focus {
+        border-color: #ff006e;
+        box-shadow: 0 0 10px rgba(255, 0, 110, 0.3);
+      }
+
+      .sort-select option {
+        background: rgba(26, 26, 26, 0.95);
+        color: var(--text-dark);
       }
 
       .btn {
@@ -556,10 +597,22 @@
           <div class="stat-value" id="totalCards">0</div>
           <div class="stat-label">Total Cards</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value" id="portfolioTotal">$0.00</div>
+          <div class="stat-label">Portfolio Value</div>
+        </div>
       </div>
 
       <div class="action-buttons">
         <button class="btn btn-primary" id="addCardBtn">+ Add Card</button>
+        <div class="sort-control">
+          <label for="sortSelect">Sort by Price:</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="none">No Sort</option>
+            <option value="low-high">Low to High</option>
+            <option value="high-low">High to Low</option>
+          </select>
+        </div>
       </div>
 
       <div id="loading" class="loading">Loading cards</div>
@@ -655,6 +708,254 @@
     </div>
 
     <script type="module">
+      // Store cards globally for sorting
+      let allCards = [];
+      
+      // Cache for card images to avoid repeated API calls
+      const cardImageCache = new Map();
+
+      // Fetch card image from Pokemon TCG API
+      async function fetchCardImage(card) {
+        // Check cache first
+        const cacheKey = `${card.name || card.id}-${card.Set || ''}`;
+        if (cardImageCache.has(cacheKey)) {
+          return cardImageCache.get(cacheKey);
+        }
+
+        // If card already has an image URL, use it
+        if (card.imageUrl) {
+          cardImageCache.set(cacheKey, card.imageUrl);
+          return card.imageUrl;
+        }
+        if (card.image) {
+          cardImageCache.set(cacheKey, card.image);
+          return card.image;
+        }
+
+        // Try to fetch from Pokemon TCG API
+        try {
+          const cardName = encodeURIComponent(card.name || card.id || '');
+          if (!cardName) return null;
+
+          // Build search query - try with set name if available
+          let searchQuery = `name:"${card.name}"`;
+          if (card.Set) {
+            searchQuery += ` set.name:"${card.Set}"`;
+          }
+
+          // Use Pokemon TCG API (free tier available at https://pokemontcg.io/)
+          // Note: You can get a free API key at https://pokemontcg.io/console
+          const apiKey = ''; // Leave empty to use public endpoint (limited)
+          const apiUrl = apiKey 
+            ? `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(searchQuery)}&pageSize=1`
+            : `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(searchQuery)}&pageSize=1`;
+
+          const headers = {};
+          if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+          }
+
+          const response = await fetch(apiUrl, { headers });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+              // Get the first matching card's image
+              const cardImage = data.data[0].images?.large || data.data[0].images?.small;
+              if (cardImage) {
+                cardImageCache.set(cacheKey, cardImage);
+                return cardImage;
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Error fetching card image:', error);
+          // Fall through to fallback
+        }
+
+        // Fallback: Try to construct a direct image URL or use search
+        // This is a fallback if API doesn't work
+        return null;
+      }
+
+      // Parse price from various formats (e.g., "$50.00", "50.00", "$50", "50")
+      function parsePrice(price) {
+        if (!price) return 0;
+        
+        // Convert to string and remove currency symbols and whitespace
+        const priceStr = String(price).trim().replace(/[$,\s]/g, '');
+        
+        // Try to parse as float
+        const parsed = parseFloat(priceStr);
+        
+        // Return 0 if not a valid number
+        return isNaN(parsed) ? 0 : parsed;
+      }
+
+      // Sort cards by price
+      function sortCards(cards, sortOrder) {
+        if (sortOrder === 'none') {
+          return [...cards]; // Return a copy, no sorting
+        }
+
+        const sorted = [...cards].sort((a, b) => {
+          // Get price for card A
+          const priceKeyA = Object.keys(a).find(key => key.toLowerCase() === 'price');
+          const priceA = priceKeyA ? parsePrice(a[priceKeyA]) : 0;
+
+          // Get price for card B
+          const priceKeyB = Object.keys(b).find(key => key.toLowerCase() === 'price');
+          const priceB = priceKeyB ? parsePrice(b[priceKeyB]) : 0;
+
+          if (sortOrder === 'low-high') {
+            return priceA - priceB;
+          } else if (sortOrder === 'high-low') {
+            return priceB - priceA;
+          }
+          return 0;
+        });
+
+        return sorted;
+      }
+
+      // Render cards to the container
+      function renderCards(cards) {
+        const cardsContainer = document.getElementById('cardsContainer');
+        
+        if (cards.length === 0) {
+          cardsContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <h2>No Cards Found</h2>
+              <p>Your pokemoncards collection is empty. Add some cards to Firestore to see them here!</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Render cards with async image loading
+        const cardsHtml = cards.map((card, index) => {
+          // Create a unique ID for this card element
+          const cardElementId = `card-${card.id}-${index}`;
+          
+          // Start with loading placeholder
+          let imageHtml = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.5);">
+              <div style="text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                <div style="font-size: 0.8rem;">Loading...</div>
+              </div>
+            </div>
+          `;
+          
+          // If card has imageUrl or image, use it immediately
+          if (card.imageUrl) {
+            imageHtml = `<img src="${card.imageUrl}" alt="${card.name || 'Pokémon Card'}" onerror="handleImageError('${cardElementId}')">`;
+          } else if (card.image) {
+            imageHtml = `<img src="${card.image}" alt="${card.name || 'Pokémon Card'}" onerror="handleImageError('${cardElementId}')">`;
+          }
+
+          // Build fields display in specific order: Set, Price, Condition, Art, then others
+          const excludedFields = ['id', 'imageUrl', 'image', 'name'];
+          const orderedFields = ['Set', 'Price', 'Condition', 'Art'];
+          
+          // Get all fields except excluded ones
+          const allFields = Object.keys(card).filter(key => !excludedFields.includes(key));
+          
+          // Separate ordered fields and other fields
+          const orderedFieldsPresent = [];
+          const otherFields = [];
+          
+          orderedFields.forEach(fieldName => {
+            // Check for case-insensitive match
+            const matchingKey = allFields.find(key => key.toLowerCase() === fieldName.toLowerCase());
+            if (matchingKey) {
+              orderedFieldsPresent.push(matchingKey);
+            }
+          });
+          
+          // Add remaining fields that weren't in the ordered list
+          allFields.forEach(key => {
+            if (!orderedFieldsPresent.includes(key)) {
+              otherFields.push(key);
+            }
+          });
+          
+          // Combine ordered fields first, then other fields
+          const sortedFields = [...orderedFieldsPresent, ...otherFields];
+          
+          const fields = sortedFields.map(key => {
+            const value = card[key];
+            // Format the value nicely
+            let displayValue = value;
+            if (value === null || value === undefined) {
+              displayValue = 'N/A';
+            } else if (typeof value === 'object') {
+              displayValue = JSON.stringify(value);
+            } else {
+              displayValue = String(value);
+            }
+            return `
+              <div class="card-field">
+                <span class="card-field-label">${key}:</span>
+                <span class="card-field-value">${displayValue}</span>
+              </div>
+            `;
+          }).join('');
+
+          // Store card data as JSON for easy access
+          const cardDataJson = JSON.stringify(card).replace(/"/g, '&quot;');
+          
+          return `
+            <div class="card" id="${cardElementId}" data-card-id="${card.id}" data-card-data="${cardDataJson}">
+              <div class="card-image">
+                ${imageHtml}
+              </div>
+              <div class="card-content">
+                <div class="card-clickable-area">
+                  <h3>${card.name || card.id || 'Unnamed Card'}</h3>
+                  ${fields ? `<div class="card-fields">${fields}</div>` : ''}
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-danger btn-small delete-card-btn" data-card-id="${card.id}">Delete</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        // Set the HTML first
+        cardsContainer.innerHTML = cardsHtml;
+        
+        // Then fetch images for cards that don't have them
+        cards.forEach((card, index) => {
+          const cardElementId = `card-${card.id}-${index}`;
+          
+          // Only fetch if card doesn't have imageUrl or image
+          if (!card.imageUrl && !card.image) {
+            fetchCardImage(card).then(imageUrl => {
+              const cardElement = document.getElementById(cardElementId);
+              if (cardElement) {
+                const imageContainer = cardElement.querySelector('.card-image');
+                if (imageContainer && imageUrl) {
+                  imageContainer.innerHTML = `<img src="${imageUrl}" alt="${card.name || 'Pokémon Card'}" onerror="handleImageError('${cardElementId}')">`;
+                } else if (imageContainer && !imageUrl) {
+                  // No image found, show default
+                  imageContainer.innerHTML = '🃏';
+                }
+              }
+            }).catch(() => {
+              const cardElement = document.getElementById(cardElementId);
+              if (cardElement) {
+                const imageContainer = cardElement.querySelector('.card-image');
+                if (imageContainer) {
+                  imageContainer.innerHTML = '🃏';
+                }
+              }
+            });
+          }
+        });
+      }
+
       // Wait for Firebase to initialize
       async function loadCards() {
         const loadingEl = document.getElementById('loading');
@@ -663,6 +964,7 @@
         const cardsContainer = document.getElementById('cardsContainer');
         const statsEl = document.getElementById('stats');
         const totalCardsEl = document.getElementById('totalCards');
+        const portfolioTotalEl = document.getElementById('portfolioTotal');
 
         try {
           // Wait for Firebase to initialize (with timeout)
@@ -680,9 +982,9 @@
           const cardsCollection = collection(window.db, 'pokemoncards');
           const cardsSnapshot = await getDocs(cardsCollection);
           
-          const cards = [];
+          allCards = [];
           cardsSnapshot.forEach((doc) => {
-            cards.push({
+            allCards.push({
               id: doc.id,
               ...doc.data()
             });
@@ -691,99 +993,19 @@
           // Hide loading, show stats
           loadingEl.style.display = 'none';
           
-          if (cards.length > 0) {
-            statsEl.style.display = 'flex';
-            totalCardsEl.textContent = cards.length;
-          }
+          // Always show stats
+          statsEl.style.display = 'flex';
+          totalCardsEl.textContent = allCards.length;
+          
+          // Calculate and display portfolio total
+          const portfolioTotal = calculatePortfolioTotal(allCards);
+          portfolioTotalEl.textContent = formatCurrency(portfolioTotal);
 
-          if (cards.length === 0) {
-            cardsContainer.innerHTML = `
-              <div class="empty-state" style="grid-column: 1 / -1;">
-                <h2>No Cards Found</h2>
-                <p>Your pokemoncards collection is empty. Add some cards to Firestore to see them here!</p>
-              </div>
-            `;
-            return;
-          }
-
-          // Display cards
-          cardsContainer.innerHTML = cards.map(card => {
-            // Build card HTML
-            let imageHtml = '🃏'; // Default emoji
-            if (card.imageUrl) {
-              imageHtml = `<img src="${card.imageUrl}" alt="${card.name || 'Pokémon Card'}" onerror="this.parentElement.innerHTML='🃏'">`;
-            } else if (card.image) {
-              imageHtml = `<img src="${card.image}" alt="${card.name || 'Pokémon Card'}" onerror="this.parentElement.innerHTML='🃏'">`;
-            }
-
-            // Build fields display in specific order: Set, Price, Condition, Art, then others
-            const excludedFields = ['id', 'imageUrl', 'image', 'name'];
-            const orderedFields = ['Set', 'Price', 'Condition', 'Art'];
-            
-            // Get all fields except excluded ones
-            const allFields = Object.keys(card).filter(key => !excludedFields.includes(key));
-            
-            // Separate ordered fields and other fields
-            const orderedFieldsPresent = [];
-            const otherFields = [];
-            
-            orderedFields.forEach(fieldName => {
-              // Check for case-insensitive match
-              const matchingKey = allFields.find(key => key.toLowerCase() === fieldName.toLowerCase());
-              if (matchingKey) {
-                orderedFieldsPresent.push(matchingKey);
-              }
-            });
-            
-            // Add remaining fields that weren't in the ordered list
-            allFields.forEach(key => {
-              if (!orderedFieldsPresent.includes(key)) {
-                otherFields.push(key);
-              }
-            });
-            
-            // Combine ordered fields first, then other fields
-            const sortedFields = [...orderedFieldsPresent, ...otherFields];
-            
-            const fields = sortedFields.map(key => {
-              const value = card[key];
-              // Format the value nicely
-              let displayValue = value;
-              if (value === null || value === undefined) {
-                displayValue = 'N/A';
-              } else if (typeof value === 'object') {
-                displayValue = JSON.stringify(value);
-              } else {
-                displayValue = String(value);
-              }
-              return `
-                <div class="card-field">
-                  <span class="card-field-label">${key}:</span>
-                  <span class="card-field-value">${displayValue}</span>
-                </div>
-              `;
-            }).join('');
-
-            // Store card data as JSON for easy access
-            const cardDataJson = JSON.stringify(card).replace(/"/g, '&quot;');
-            
-            return `
-              <div class="card" data-card-id="${card.id}" data-card-data="${cardDataJson}">
-                <div class="card-image">
-                  ${imageHtml}
-                </div>
-                <div class="card-content">
-                  <div class="card-clickable-area">
-                    <h3>${card.name || card.id || 'Unnamed Card'}</h3>
-                    ${fields ? `<div class="card-fields">${fields}</div>` : ''}
-                  </div>
-                  <div class="card-actions">
-                    <button class="btn btn-danger btn-small delete-card-btn" data-card-id="${card.id}">Delete</button>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('');
+          // Get current sort order and render cards
+          const sortSelect = document.getElementById('sortSelect');
+          const sortOrder = sortSelect ? sortSelect.value : 'none';
+          const sortedCards = sortCards(allCards, sortOrder);
+          renderCards(sortedCards);
 
         } catch (error) {
           console.error('Error loading cards:', error);
@@ -793,8 +1015,48 @@
         }
       }
 
+      // Handle image loading errors
+      window.handleImageError = function(cardElementId) {
+        const cardElement = document.getElementById(cardElementId);
+        if (cardElement) {
+          const imageContainer = cardElement.querySelector('.card-image');
+          if (imageContainer) {
+            imageContainer.innerHTML = '🃏';
+          }
+        }
+      };
+
       // Make loadCards available globally
       window.loadCards = loadCards;
+
+      // Calculate total portfolio value from cards
+      function calculatePortfolioTotal(cards) {
+        let total = 0;
+        
+        cards.forEach(card => {
+          // Check for Price field (case-insensitive)
+          const priceKey = Object.keys(card).find(key => 
+            key.toLowerCase() === 'price'
+          );
+          
+          if (priceKey) {
+            const price = parsePrice(card[priceKey]);
+            total += price;
+          }
+        });
+        
+        return total;
+      }
+
+      // Format currency value
+      function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
 
       // Convert card name to a valid Firestore document ID
       // Firestore IDs can contain most characters except forward slashes (/)
@@ -928,6 +1190,16 @@
 
           // Set up add card button
           document.getElementById('addCardBtn').addEventListener('click', openModal);
+
+          // Set up sort functionality
+          const sortSelect = document.getElementById('sortSelect');
+          if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+              const sortOrder = e.target.value;
+              const sortedCards = sortCards(allCards, sortOrder);
+              renderCards(sortedCards);
+            });
+          }
           
           // Set up modal close buttons
           document.getElementById('closeModal').addEventListener('click', closeModal);
