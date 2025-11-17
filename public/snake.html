@@ -277,7 +277,8 @@
         border: 1px solid rgba(255, 0, 110, 0.2);
         border-radius: 15px;
         padding: 1.5rem;
-        max-width: 300px;
+        max-width: 350px;
+        min-width: 300px;
       }
 
       body.theme-light .leaderboard {
@@ -296,12 +297,19 @@
 
       .leaderboard-item {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         padding: 0.75rem;
         margin-bottom: 0.5rem;
         background: rgba(255, 0, 110, 0.1);
         border-radius: 8px;
         border: 1px solid rgba(255, 0, 110, 0.2);
+      }
+
+      .leaderboard-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
       }
 
       .leaderboard-rank {
@@ -325,6 +333,17 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+      }
+
+      .leaderboard-date {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        opacity: 0.7;
+        padding-left: 1.75rem;
+      }
+
+      body.theme-light .leaderboard-date {
+        color: #666666;
       }
 
       .modal {
@@ -719,6 +738,14 @@
       }
 
       function handleKeyPress(e) {
+        // Check if user is typing in an input or textarea
+        const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+        
+        // If user is typing, don't intercept game keys
+        if (isTyping) {
+          return;
+        }
+        
         // Check if it's a game control key
         const isGameKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) ||
                          ['w', 'a', 's', 'd', ' ', 'r'].includes(e.key.toLowerCase());
@@ -895,6 +922,27 @@
         }));
       }
 
+      function formatDate(timestamp) {
+        if (!timestamp) return 'Unknown date';
+        
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        // Show relative time for recent scores
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        
+        // Show actual date for older scores
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+      }
+
       async function loadLeaderboard() {
         const leaderboardList = document.getElementById('leaderboardList');
         
@@ -933,9 +981,12 @@
             const li = document.createElement('li');
             li.className = 'leaderboard-item';
             li.innerHTML = `
-              <span class="leaderboard-rank">#${index + 1}</span>
-              <span class="leaderboard-name">${scoreData.name}</span>
-              <span class="leaderboard-score">${scoreData.score}</span>
+              <div class="leaderboard-main">
+                <span class="leaderboard-rank">#${index + 1}</span>
+                <span class="leaderboard-name">${scoreData.name}</span>
+                <span class="leaderboard-score">${scoreData.score}</span>
+              </div>
+              <div class="leaderboard-date">${formatDate(scoreData.timestamp)}</div>
             `;
             leaderboardList.appendChild(li);
           });
