@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Snake Game | Cooper Ren</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/theme-analytics.js" defer></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyD2VBperC6F0TPJNHaPNWNNxiGkkrEkzXw",
+        authDomain: "personalwebsite-cooper.firebaseapp.com",
+        projectId: "personalwebsite-cooper",
+        storageBucket: "personalwebsite-cooper.firebasestorage.app",
+        messagingSenderId: "897803947271",
+        appId: "1:897803947271:web:f5a9c5e9f210db555b49a2"
+      };
+
+      let app;
+      const existingApps = getApps();
+      if (existingApps.length === 0) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = existingApps[0];
+      }
+
+      const db = getFirestore(app);
+
+      window.db = db;
+      window.getDocs = getDocs;
+      window.collection = collection;
+      window.addDoc = addDoc;
+      window.deleteDoc = deleteDoc;
+      window.doc = doc;
+      window.query = query;
+      window.orderBy = orderBy;
+      window.limit = limit;
+      window.firebaseInitialized = true;
+    </script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #ff006e;
+        --secondary: #fb5607;
+        --dark: #000000;
+        --light: #ffffff;
+        --gray: #1a1a1a;
+        --text-dark: #ffffff;
+        --text-light: #e0e0e0;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow-x: hidden;
+        background: linear-gradient(135deg, #000000 0%, #1a0000 25%, #2d0000 50%, #1a001a 75%, #000000 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      body.theme-light {
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 25%, #e8e8e8 50%, #f0f0f0 75%, #ffffff 100%);
+        color: #000000;
+      }
+
+      body.theme-light nav {
+        background: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.2);
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      body.theme-light .nav-links a {
+        color: #000000;
+      }
+
+      body.theme-light .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 2px 20px rgba(255, 0, 110, 0.2);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.3);
+        z-index: 1000;
+        padding: 1rem 0;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607, #ff006e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 6rem 2rem 2rem;
+      }
+
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+      }
+
+      .game-container {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+        align-items: start;
+      }
+
+      .game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .game-info {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+
+      .info-item {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        text-align: center;
+      }
+
+      body.theme-light .info-item {
+        background: rgba(255, 255, 255, 0.9);
+        color: #000000;
+      }
+
+      .info-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+      }
+
+      body.theme-light .info-label {
+        color: #666666;
+      }
+
+      .info-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      #gameCanvas {
+        border: 3px solid rgba(255, 0, 110, 0.5);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 10px 40px rgba(255, 0, 110, 0.3);
+      }
+
+      body.theme-light #gameCanvas {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(255, 0, 110, 0.5);
+      }
+
+      .controls {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+      }
+
+      body.theme-light .controls {
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .controls h3 {
+        color: #ff006e;
+        margin-bottom: 1rem;
+      }
+
+      .controls p {
+        color: var(--text-light);
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+      }
+
+      body.theme-light .controls p {
+        color: #555555;
+      }
+
+      .btn {
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-top: 1rem;
+      }
+
+      .btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(255, 0, 110, 0.5);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .leaderboard {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        border-radius: 15px;
+        padding: 1.5rem;
+        max-width: 300px;
+      }
+
+      body.theme-light .leaderboard {
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .leaderboard h3 {
+        color: #ff006e;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .leaderboard-list {
+        list-style: none;
+      }
+
+      .leaderboard-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: rgba(255, 0, 110, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 0, 110, 0.2);
+      }
+
+      .leaderboard-rank {
+        font-weight: 700;
+        color: #ff006e;
+        margin-right: 0.5rem;
+      }
+
+      .leaderboard-name {
+        flex-grow: 1;
+        color: var(--text-dark);
+      }
+
+      body.theme-light .leaderboard-name {
+        color: #000000;
+      }
+
+      .leaderboard-score {
+        font-weight: 600;
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: rgba(26, 26, 26, 0.95);
+        border: 2px solid rgba(255, 0, 110, 0.5);
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(255, 0, 110, 0.5);
+      }
+
+      body.theme-light .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .modal-content h2 {
+        background: linear-gradient(135deg, #ff006e, #fb5607);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+      }
+
+      .modal-content p {
+        color: var(--text-light);
+        margin-bottom: 1rem;
+      }
+
+      body.theme-light .modal-content p {
+        color: #555555;
+      }
+
+      .modal-content input {
+        width: 100%;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        border-radius: 8px;
+        color: var(--text-dark);
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      body.theme-light .modal-content input {
+        background: rgba(255, 255, 255, 0.9);
+        color: #000000;
+        border-color: rgba(255, 0, 110, 0.3);
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+      }
+
+      .game-status {
+        text-align: center;
+        margin: 1rem 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #ff006e;
+      }
+
+      @media (max-width: 1200px) {
+        .game-container {
+          grid-template-columns: 1fr;
+        }
+
+        .leaderboard {
+          max-width: 100%;
+        }
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2rem;
+        }
+
+        .game-info {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        #gameCanvas {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-container">
+        <div class="logo">Cooper Ren</div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="projects.html">Projects</a></li>
+          <li><a href="educational.html">Pascal's Triangle</a></li>
+          <li><a href="pokemoncards.html">Pokémon Cards</a></li>
+          <li><a href="analytics.html">Analytics</a></li>
+          <li><a href="snake.html" class="active">Snake Game</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>🐍 Snake Game</h1>
+      
+      <div class="game-container">
+        <div class="leaderboard">
+          <h3>🏆 Global Leaderboard</h3>
+          <ul class="leaderboard-list" id="leaderboardList">
+            <li style="text-align: center; color: var(--text-light);">Loading...</li>
+          </ul>
+        </div>
+
+        <div class="game-wrapper">
+          <div class="game-info">
+            <div class="info-item">
+              <div class="info-label">Score</div>
+              <div class="info-value" id="currentScore">0</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">High Score</div>
+              <div class="info-value" id="highScore">0</div>
+            </div>
+          </div>
+
+          <canvas id="gameCanvas" width="400" height="400"></canvas>
+          
+          <div class="game-status" id="gameStatus">Press Start to Play!</div>
+          
+          <button class="btn" id="startBtn">Start Game</button>
+          <button class="btn" id="pauseBtn" style="display: none;">Pause</button>
+        </div>
+
+        <div class="controls">
+          <h3>🎮 Controls</h3>
+          <p><strong>Arrow Keys</strong> or <strong>WASD</strong></p>
+          <p>↑ W - Move Up</p>
+          <p>↓ S - Move Down</p>
+          <p>← A - Move Left</p>
+          <p>→ D - Move Right</p>
+          <p style="margin-top: 1rem;"><strong>Space</strong> - Pause/Resume</p>
+          <p><strong>R</strong> - Restart Game</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name Input Modal -->
+    <div class="modal" id="nameModal">
+      <div class="modal-content">
+        <h2>🎉 Top 5 Score!</h2>
+        <p>You scored <span id="finalScore">0</span> points!</p>
+        <p>Enter your name for the leaderboard:</p>
+        <input type="text" id="playerNameInput" placeholder="Your name (or leave blank for Anonymous)" maxlength="20">
+        <div class="modal-buttons">
+          <button class="btn" id="submitScoreBtn">Submit Score</button>
+          <button class="btn" id="skipScoreBtn" style="background: rgba(100, 100, 100, 0.5);">Submit as Anonymous</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Game constants
+      const GRID_SIZE = 20;
+      const CELL_SIZE = 20;
+      const INITIAL_SPEED = 150;
+      const SPEED_INCREMENT = 5;
+      const MIN_SPEED = 50;
+
+      // Game state
+      let canvas, ctx;
+      let snake = [];
+      let direction = { x: 1, y: 0 };
+      let nextDirection = { x: 1, y: 0 };
+      let food = { x: 0, y: 0 };
+      let score = 0;
+      let highScore = 0;
+      let gameLoop = null;
+      let gameSpeed = INITIAL_SPEED;
+      let isPaused = false;
+      let isGameOver = false;
+      let playerName = '';
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function() {
+        canvas = document.getElementById('gameCanvas');
+        ctx = canvas.getContext('2d');
+        
+        loadLocalData();
+        loadLeaderboard();
+        initGame();
+        
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('submitScoreBtn').addEventListener('click', submitScore);
+        document.getElementById('skipScoreBtn').addEventListener('click', skipScore);
+        document.addEventListener('keydown', handleKeyPress);
+      });
+
+      function initGame() {
+        snake = [
+          { x: 10, y: 10 },
+          { x: 9, y: 10 },
+          { x: 8, y: 10 }
+        ];
+        direction = { x: 1, y: 0 };
+        nextDirection = { x: 1, y: 0 };
+        score = 0;
+        gameSpeed = INITIAL_SPEED;
+        isPaused = false;
+        isGameOver = false;
+        
+        updateScore();
+        spawnFood();
+        draw();
+      }
+
+      function startGame() {
+        if (gameLoop) {
+          clearInterval(gameLoop);
+        }
+        
+        initGame();
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('pauseBtn').style.display = 'inline-block';
+        document.getElementById('gameStatus').textContent = 'Game On! 🎮';
+        
+        gameLoop = setInterval(update, gameSpeed);
+      }
+
+      function update() {
+        if (isPaused || isGameOver) return;
+        
+        // Update direction
+        direction = { ...nextDirection };
+        
+        // Calculate new head position
+        const head = { ...snake[0] };
+        head.x += direction.x;
+        head.y += direction.y;
+        
+        // Check wall collision
+        if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+          gameOver();
+          return;
+        }
+        
+        // Check self collision
+        if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+          gameOver();
+          return;
+        }
+        
+        // Add new head
+        snake.unshift(head);
+        
+        // Check food collision
+        if (head.x === food.x && head.y === food.y) {
+          score++;
+          updateScore();
+          spawnFood();
+          
+          // Increase speed
+          if (gameSpeed > MIN_SPEED) {
+            gameSpeed = Math.max(MIN_SPEED, gameSpeed - SPEED_INCREMENT);
+            clearInterval(gameLoop);
+            gameLoop = setInterval(update, gameSpeed);
+          }
+        } else {
+          // Remove tail if no food eaten
+          snake.pop();
+        }
+        
+        draw();
+      }
+
+      function draw() {
+        // Clear canvas
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--dark');
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw snake
+        snake.forEach((segment, index) => {
+          const gradient = ctx.createLinearGradient(
+            segment.x * CELL_SIZE, segment.y * CELL_SIZE,
+            (segment.x + 1) * CELL_SIZE, (segment.y + 1) * CELL_SIZE
+          );
+          
+          if (index === 0) {
+            gradient.addColorStop(0, '#ff006e');
+            gradient.addColorStop(1, '#fb5607');
+          } else {
+            const alpha = 1 - (index / snake.length) * 0.5;
+            gradient.addColorStop(0, `rgba(255, 0, 110, ${alpha})`);
+            gradient.addColorStop(1, `rgba(251, 86, 7, ${alpha})`);
+          }
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(
+            segment.x * CELL_SIZE + 1,
+            segment.y * CELL_SIZE + 1,
+            CELL_SIZE - 2,
+            CELL_SIZE - 2
+          );
+          
+          // Draw eyes on head
+          if (index === 0) {
+            ctx.fillStyle = '#ffffff';
+            const eyeSize = 3;
+            const eyeOffset = 6;
+            
+            if (direction.x === 1) { // Right
+              ctx.fillRect(segment.x * CELL_SIZE + eyeOffset + 5, segment.y * CELL_SIZE + 5, eyeSize, eyeSize);
+              ctx.fillRect(segment.x * CELL_SIZE + eyeOffset + 5, segment.y * CELL_SIZE + 12, eyeSize, eyeSize);
+            } else if (direction.x === -1) { // Left
+              ctx.fillRect(segment.x * CELL_SIZE + eyeOffset - 1, segment.y * CELL_SIZE + 5, eyeSize, eyeSize);
+              ctx.fillRect(segment.x * CELL_SIZE + eyeOffset - 1, segment.y * CELL_SIZE + 12, eyeSize, eyeSize);
+            } else if (direction.y === -1) { // Up
+              ctx.fillRect(segment.x * CELL_SIZE + 5, segment.y * CELL_SIZE + eyeOffset - 1, eyeSize, eyeSize);
+              ctx.fillRect(segment.x * CELL_SIZE + 12, segment.y * CELL_SIZE + eyeOffset - 1, eyeSize, eyeSize);
+            } else if (direction.y === 1) { // Down
+              ctx.fillRect(segment.x * CELL_SIZE + 5, segment.y * CELL_SIZE + eyeOffset + 5, eyeSize, eyeSize);
+              ctx.fillRect(segment.x * CELL_SIZE + 12, segment.y * CELL_SIZE + eyeOffset + 5, eyeSize, eyeSize);
+            }
+          }
+        });
+        
+        // Draw food
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath();
+        ctx.arc(
+          food.x * CELL_SIZE + CELL_SIZE / 2,
+          food.y * CELL_SIZE + CELL_SIZE / 2,
+          CELL_SIZE / 2 - 2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Draw food highlight
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(
+          food.x * CELL_SIZE + CELL_SIZE / 3,
+          food.y * CELL_SIZE + CELL_SIZE / 3,
+          3,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      function spawnFood() {
+        let newFood;
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        do {
+          newFood = {
+            x: Math.floor(Math.random() * GRID_SIZE),
+            y: Math.floor(Math.random() * GRID_SIZE)
+          };
+          attempts++;
+        } while (
+          snake.some(segment => segment.x === newFood.x && segment.y === newFood.y) &&
+          attempts < maxAttempts
+        );
+        
+        food = newFood;
+      }
+
+      function handleKeyPress(e) {
+        // Check if it's a game control key
+        const isGameKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) ||
+                         ['w', 'a', 's', 'd', ' ', 'r'].includes(e.key.toLowerCase());
+        
+        // Prevent default for all game keys to stop page scrolling
+        if (isGameKey) {
+          e.preventDefault();
+        }
+        
+        // Direction controls
+        if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && direction.y === 0) {
+          nextDirection = { x: 0, y: -1 };
+        } else if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && direction.y === 0) {
+          nextDirection = { x: 0, y: 1 };
+        } else if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && direction.x === 0) {
+          nextDirection = { x: -1, y: 0 };
+        } else if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && direction.x === 0) {
+          nextDirection = { x: 1, y: 0 };
+        }
+        
+        // Pause/Resume
+        if (e.key === ' ' && gameLoop && !isGameOver) {
+          togglePause();
+        }
+        
+        // Restart
+        if (e.key === 'r' || e.key === 'R') {
+          if (gameLoop) {
+            startGame();
+          }
+        }
+      }
+
+      function togglePause() {
+        isPaused = !isPaused;
+        const pauseBtn = document.getElementById('pauseBtn');
+        const statusEl = document.getElementById('gameStatus');
+        
+        if (isPaused) {
+          pauseBtn.textContent = 'Resume';
+          statusEl.textContent = '⏸️ Paused';
+        } else {
+          pauseBtn.textContent = 'Pause';
+          statusEl.textContent = 'Game On! 🎮';
+        }
+      }
+
+      async function gameOver() {
+        isGameOver = true;
+        clearInterval(gameLoop);
+        gameLoop = null;
+        
+        document.getElementById('startBtn').style.display = 'inline-block';
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('gameStatus').textContent = '💀 Game Over!';
+        
+        // Update high score if needed
+        if (score > highScore) {
+          highScore = score;
+        }
+        saveLocalData();
+        
+        // Check if score qualifies for top 5
+        try {
+          const scoresCollection = window.collection(window.db, 'snakeScores');
+          const querySnapshot = await window.getDocs(scoresCollection);
+          
+          // Get all scores
+          const scores = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            scores.push(data.score || 0);
+          });
+          
+          // Sort scores descending
+          scores.sort((a, b) => b - a);
+          
+          // Check if score qualifies for top 5
+          const qualifiesForTop5 = scores.length < 5 || score > scores[4];
+          
+          if (qualifiesForTop5) {
+            // Score is good enough - ask for name
+            showNameModal();
+          } else {
+            // Score doesn't qualify - just show message
+            document.getElementById('gameStatus').textContent = `💀 Game Over! Score: ${score} - Need ${scores[4] + 1} to reach top 5`;
+          }
+        } catch (error) {
+          console.error('Error checking leaderboard:', error);
+          // If there's an error, show the modal anyway
+          showNameModal();
+        }
+      }
+
+      function updateScore() {
+        document.getElementById('currentScore').textContent = score;
+        document.getElementById('highScore').textContent = highScore;
+      }
+
+      function showNameModal() {
+        const modal = document.getElementById('nameModal');
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('playerNameInput').value = playerName || '';
+        modal.classList.add('active');
+        document.getElementById('playerNameInput').focus();
+      }
+
+      function hideNameModal() {
+        document.getElementById('nameModal').classList.remove('active');
+      }
+
+      async function submitScore() {
+        const nameInput = document.getElementById('playerNameInput').value.trim();
+        
+        // Use "Anonymous" if no name is entered
+        playerName = nameInput || 'Anonymous';
+        saveLocalData();
+        
+        try {
+          // Add score to Firestore - store all scores
+          await window.addDoc(window.collection(window.db, 'snakeScores'), {
+            name: playerName,
+            score: score,
+            timestamp: new Date().toISOString()
+          });
+          
+          console.log('Score submitted:', playerName, score);
+          
+          hideNameModal();
+          loadLeaderboard();
+        } catch (error) {
+          console.error('Error submitting score:', error);
+          alert('Failed to submit score. Please try again.');
+        }
+      }
+
+      async function skipScore() {
+        // Use "Anonymous" when skipping
+        playerName = 'Anonymous';
+        saveLocalData();
+        
+        try {
+          // Add score to Firestore with Anonymous name - store all scores
+          await window.addDoc(window.collection(window.db, 'snakeScores'), {
+            name: playerName,
+            score: score,
+            timestamp: new Date().toISOString()
+          });
+          
+          console.log('Score submitted anonymously:', score);
+          
+          hideNameModal();
+          loadLeaderboard();
+        } catch (error) {
+          console.error('Error submitting score:', error);
+          hideNameModal();
+        }
+      }
+
+      function loadLocalData() {
+        const savedData = localStorage.getItem('snakeGame');
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          highScore = data.highScore || 0;
+          playerName = data.playerName || '';
+        }
+        updateScore();
+      }
+
+      function saveLocalData() {
+        localStorage.setItem('snakeGame', JSON.stringify({
+          highScore: highScore,
+          playerName: playerName
+        }));
+      }
+
+      async function loadLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboardList');
+        
+        try {
+          // Get all scores and sort them
+          const scoresCollection = window.collection(window.db, 'snakeScores');
+          const querySnapshot = await window.getDocs(scoresCollection);
+          
+          console.log('Total scores in database:', querySnapshot.size);
+          
+          if (querySnapshot.empty) {
+            leaderboardList.innerHTML = '<li style="text-align: center; color: var(--text-light);">No scores yet!</li>';
+            return;
+          }
+          
+          // Get all scores into an array
+          const scores = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            scores.push({
+              name: data.name || 'Anonymous',
+              score: data.score || 0,
+              timestamp: data.timestamp
+            });
+          });
+          
+          // Sort by score descending and take top 5
+          scores.sort((a, b) => b.score - a.score);
+          const topScores = scores.slice(0, 5);
+          
+          console.log('Top 5 scores:', topScores);
+          
+          // Display the scores
+          leaderboardList.innerHTML = '';
+          topScores.forEach((scoreData, index) => {
+            const li = document.createElement('li');
+            li.className = 'leaderboard-item';
+            li.innerHTML = `
+              <span class="leaderboard-rank">#${index + 1}</span>
+              <span class="leaderboard-name">${scoreData.name}</span>
+              <span class="leaderboard-score">${scoreData.score}</span>
+            `;
+            leaderboardList.appendChild(li);
+          });
+        } catch (error) {
+          console.error('Error loading leaderboard:', error);
+          leaderboardList.innerHTML = `<li style="text-align: center; color: var(--text-light);">Failed to load: ${error.message}</li>`;
+        }
+      }
+
+      // Submit on Enter key
+      document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          submitScore();
+        }
+      });
+    </script>
+  </body>
+</html>
+

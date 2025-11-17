@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/theme-analytics.js" defer></script>
 
     <style>
       * {
@@ -39,6 +40,73 @@
         min-height: 100vh;
         height: 100vh;
         position: relative;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      /* Light Mode Styles */
+      body.theme-light {
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 25%, #e8e8e8 50%, #f0f0f0 75%, #ffffff 100%);
+        color: #000000;
+      }
+
+      body.theme-light nav {
+        background: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid rgba(255, 0, 110, 0.2);
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      body.theme-light .nav-links a {
+        color: #000000;
+      }
+
+      body.theme-light .nav-links a:hover {
+        color: #ff006e;
+      }
+
+      body.theme-light section {
+        color: #000000;
+      }
+
+      body.theme-light .hero .subtitle {
+        color: #333333;
+      }
+
+      body.theme-light .about-text p {
+        color: #333333;
+      }
+
+      body.theme-light .projects-header p {
+        color: #333333;
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle-btn {
+        background: rgba(255, 0, 110, 0.2);
+        border: 1px solid rgba(255, 0, 110, 0.3);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        margin-left: 1rem;
+      }
+
+      .theme-toggle-btn:hover {
+        background: rgba(255, 0, 110, 0.4);
+        transform: scale(1.1);
+      }
+
+      body.theme-light .theme-toggle-btn {
+        background: rgba(255, 0, 110, 0.1);
+        border-color: rgba(255, 0, 110, 0.2);
+      }
+
+      body.theme-light .theme-toggle-btn:hover {
+        background: rgba(255, 0, 110, 0.2);
       }
 
       /* Navigation */
@@ -149,9 +217,15 @@
       }
 
       section.active {
-        display: flex;
+        display: block;
         opacity: 1;
         visibility: visible;
+      }
+
+      section#home.active,
+      section#about.active,
+      section#contact.active {
+        display: flex;
       }
 
       /* Make sections clickable */
@@ -349,6 +423,8 @@
       /* Projects Section */
       .projects {
         background: rgba(0, 0, 0, 0.3);
+        min-height: 100vh;
+        padding: 6rem 0 4rem;
       }
 
       .projects-header {
@@ -576,33 +652,6 @@
         transform: translateY(0);
       }
 
-      /* Scroll Indicator */
-      .scroll-indicator {
-        position: absolute;
-        bottom: 2rem;
-        left: 50%;
-        transform: translateX(-50%);
-        animation: bounce 2s infinite;
-      }
-
-      @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% {
-          transform: translateX(-50%) translateY(0);
-        }
-        40% {
-          transform: translateX(-50%) translateY(-10px);
-        }
-        60% {
-          transform: translateX(-50%) translateY(-5px);
-        }
-      }
-
-      .scroll-indicator::after {
-        content: '↓';
-        font-size: 2rem;
-        color: white;
-        opacity: 0.7;
-      }
     </style>
   </head>
   <body>
@@ -618,9 +667,11 @@
         <ul class="nav-links" id="navLinks">
           <li><a href="#home" class="active">Home</a></li>
           <li><a href="about.html">About</a></li>
-          <li><a href="#projects">Projects</a></li>
+          <li><a href="projects.html">Projects</a></li>
           <li><a href="educational.html">Pascal's Triangle</a></li>
           <li><a href="pokemoncards.html">Pokémon Cards</a></li>
+          <li><a href="analytics.html">Analytics</a></li>
+          <li><a href="snake.html">Snake Game</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
@@ -632,9 +683,8 @@
         <div class="hero-content">
           <h1>Hi, I'm Cooper Ren</h1>
           <p class="subtitle">Welcome to my personal website</p>
-          <a href="#about" class="cta-button">Learn More About Me</a>
+          <a href="about.html" class="cta-button">Learn More About Me</a>
         </div>
-        <div class="scroll-indicator"></div>
       </div>
     </section>
 
@@ -684,58 +734,81 @@
         </div>
         
         <div class="projects-grid" id="projectsGrid">
-          <!-- Example Project Cards - Replace these with your actual projects -->
           <div class="project-card fade-in">
             <div class="project-image">
-              💻
+              🔺
             </div>
             <div class="project-content">
-              <h3>Project Title</h3>
-              <p>This is a placeholder project card. You can replace this with details about your actual projects. Describe what the project does, technologies used, and key features.</p>
+              <h3>Pascal's Triangle</h3>
+              <p>An interactive educational tool that visualizes Pascal's Triangle with mathematical properties, binomial expansions, and pattern exploration. Features include mod coloring, identity highlighting, and real-time calculations.</p>
               <div class="project-tags">
                 <span class="project-tag">HTML</span>
                 <span class="project-tag">CSS</span>
                 <span class="project-tag">JavaScript</span>
+                <span class="project-tag">Math</span>
               </div>
               <div class="project-links">
-                <a href="#" class="project-link">Live Demo</a>
-                <a href="#" class="project-link secondary">Source Code</a>
+                <a href="educational.html" class="project-link">Live Demo</a>
               </div>
             </div>
           </div>
 
           <div class="project-card fade-in">
             <div class="project-image">
-              🎨
+              🃏
             </div>
             <div class="project-content">
-              <h3>Another Project</h3>
-              <p>Add your project descriptions here. Include information about what makes each project unique and what you learned while building it.</p>
+              <h3>Pokémon Cards Collection</h3>
+              <p>A dynamic web application for managing a Pokémon card collection with Firebase integration. Features include adding, editing, deleting cards, automatic image fetching, price sorting, and portfolio value calculation.</p>
               <div class="project-tags">
-                <span class="project-tag">React</span>
-                <span class="project-tag">Node.js</span>
+                <span class="project-tag">HTML</span>
+                <span class="project-tag">CSS</span>
+                <span class="project-tag">JavaScript</span>
+                <span class="project-tag">Firebase</span>
+                <span class="project-tag">Firestore</span>
               </div>
               <div class="project-links">
-                <a href="#" class="project-link">Live Demo</a>
-                <a href="#" class="project-link secondary">Source Code</a>
+                <a href="pokemoncards.html" class="project-link">Live Demo</a>
               </div>
             </div>
           </div>
 
           <div class="project-card fade-in">
             <div class="project-image">
-              🚀
+              📊
             </div>
             <div class="project-content">
-              <h3>More Projects</h3>
-              <p>Keep adding project cards to showcase your work. Each card can be customized with different colors, icons, and descriptions.</p>
+              <h3>Analytics Dashboard</h3>
+              <p>A comprehensive analytics dashboard for tracking website metrics and user behavior. Features include page view tracking, visitor analytics, theme preference tracking, and real-time data visualization with interactive charts.</p>
               <div class="project-tags">
-                <span class="project-tag">Python</span>
-                <span class="project-tag">Database</span>
+                <span class="project-tag">HTML</span>
+                <span class="project-tag">CSS</span>
+                <span class="project-tag">JavaScript</span>
+                <span class="project-tag">Analytics</span>
+                <span class="project-tag">Data Visualization</span>
               </div>
               <div class="project-links">
-                <a href="#" class="project-link">Live Demo</a>
-                <a href="#" class="project-link secondary">Source Code</a>
+                <a href="analytics.html" class="project-link">Live Demo</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="project-card fade-in">
+            <div class="project-image">
+              🐍
+            </div>
+            <div class="project-content">
+              <h3>Snake Game</h3>
+              <p>A classic Snake game with modern features including a global leaderboard powered by Firebase Firestore, local high score tracking with browser storage, smooth animations, and responsive controls. Compete with players worldwide!</p>
+              <div class="project-tags">
+                <span class="project-tag">HTML</span>
+                <span class="project-tag">Canvas</span>
+                <span class="project-tag">JavaScript</span>
+                <span class="project-tag">Firebase</span>
+                <span class="project-tag">Game Dev</span>
+              </div>
+              <div class="project-links">
+                <a href="snake.html" class="project-link">Play Now</a>
               </div>
             </div>
           </div>
@@ -748,9 +821,15 @@
       <div class="container">
         <div class="about-text fade-in" style="text-align: center;">
           <h2>Get In Touch</h2>
-          <p style="font-size: 1.2rem;">
+          <p style="font-size: 1.2rem; margin-bottom: 1.5rem;">
             I'd love to hear from you! Feel free to reach out if you'd like to connect,
-            collaborate, or just say hello.
+            collaborate, or just say hello. I'm always open to discussing new opportunities,
+            projects, or just having a conversation.
+          </p>
+          <p style="font-size: 1.3rem; margin-top: 2rem;">
+            <a href="mailto:cren2@hwemail.com" style="color: #ff006e; text-decoration: none; font-weight: 600; transition: color 0.3s ease;" onmouseover="this.style.color='#fb5607'" onmouseout="this.style.color='#ff006e'">
+              📧 cren2@hwemail.com
+            </a>
           </p>
         </div>
       </div>
@@ -856,7 +935,16 @@
         const targetSection = document.getElementById(targetSectionId);
         if (targetSection) {
           targetSection.classList.add('active');
-          targetSection.style.display = 'flex';
+          // Let CSS handle display property
+          targetSection.style.display = '';
+          
+          // Trigger fade-in animations for elements in this section
+          setTimeout(() => {
+            const fadeElements = targetSection.querySelectorAll('.fade-in');
+            fadeElements.forEach(el => {
+              el.classList.add('visible');
+            });
+          }, 50);
           
           // Scroll to top to ensure section is visible
           window.scrollTo({
@@ -869,9 +957,37 @@
         updateActiveNavLink();
       }
 
+      // Handle hash navigation from external pages
+      function handleHashNavigation() {
+        const hash = window.location.hash;
+        if (hash) {
+          const targetId = hash.slice(1); // Remove the #
+          const targetIndex = allSectionsForNavigation.indexOf(targetId);
+          if (targetIndex !== -1) {
+            currentPageIndex = targetIndex;
+            switchToPage(currentPageIndex);
+          }
+        }
+      }
+
+      // Handle hash changes
+      window.addEventListener('hashchange', handleHashNavigation);
+
       // Initialize - show only home page
       document.addEventListener('DOMContentLoaded', function() {
-        // Ensure home is visible and others are hidden
+        // Check for hash first
+        const hash = window.location.hash;
+        if (hash) {
+          const targetId = hash.slice(1);
+          const targetIndex = allSectionsForNavigation.indexOf(targetId);
+          if (targetIndex !== -1) {
+            currentPageIndex = targetIndex;
+            switchToPage(currentPageIndex);
+            return; // Skip default initialization
+          }
+        }
+        
+        // Default: Ensure home is visible and others are hidden
         const homeSection = document.getElementById('home');
         if (homeSection) {
           homeSection.classList.add('active');
@@ -894,19 +1010,15 @@
         const heroSection = document.getElementById('home');
         if (heroSection) {
           heroSection.addEventListener('click', function(e) {
-            // Don't navigate if clicking on the button
+            // Don't navigate if clicking on the button (let it navigate to about.html)
             if (e.target.closest('.cta-button')) {
-              e.preventDefault();
               e.stopPropagation();
-              // Button click goes to about
-              currentPageIndex = 1;
-              switchToPage(currentPageIndex);
+              // Button will navigate to about.html normally
               return;
             }
             
-            // Clicking anywhere on home goes to next page (about)
-            currentPageIndex = 1;
-            switchToPage(currentPageIndex);
+            // Clicking anywhere on home goes to projects.html
+            window.location.href = 'projects.html';
           });
         }
 
@@ -928,11 +1040,12 @@
 
         if (projectsSection) {
           projectsSection.addEventListener('click', function(e) {
-            // Don't navigate if clicking on interactive elements
-            if (e.target.closest('a') || e.target.closest('button')) {
+            // Don't navigate if clicking on interactive elements (links, buttons, etc.)
+            if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.project-card')) {
               return;
             }
-            currentPageIndex = 3; // Go to contact
+            // Clicking background goes to contact
+            currentPageIndex = 3;
             switchToPage(currentPageIndex);
           });
         }
@@ -950,15 +1063,16 @@
 
         // Update navigation links to use page switching
         document.querySelectorAll('.nav-links a').forEach(link => {
+          const href = link.getAttribute('href');
+          
+          // Skip event listener attachment for external links entirely
+          if (href.includes('.html') || href.startsWith('http')) {
+            return; // Don't attach any listener, let browser handle it
+          }
+          
+          // Only attach listener for anchor links
           link.addEventListener('click', function(e) {
-            const href = this.getAttribute('href');
-            
-            // If it's an external link (like educational.html), let it navigate normally
-            if (href.includes('.html') || href.startsWith('http')) {
-              return; // Don't prevent default, allow normal navigation
-            }
-            
-            // Otherwise, it's an anchor link - use page switching
+            // It's an anchor link - use page switching
             e.preventDefault();
             const targetId = href.slice(1); // Remove the #
             const targetIndex = allSectionsForNavigation.indexOf(targetId);
